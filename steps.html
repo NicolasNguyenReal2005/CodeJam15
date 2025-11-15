@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>NOBUL</title>
+    <script src="./script.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+    <!-- ============================================ -->
+    <!--                    NAV                      -->
+    <!-- ============================================ -->
+    <header class="top-nav">
+        <div class="nav-inner">
+            <nav class="nav-links">
+                <!-- Home is main / default -->
+                <a href="#" class="nav-link nav-link-primary" data-target="home">
+                    Home
+                </a>
+                <a href="#" class="nav-link" data-target="try">
+                    Try me out
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- ============================================ -->
+        <!--                 HOME PAGE                   -->
+        <!-- ============================================ -->
+        <div id="home-page">
+            <!-- HERO / WELCOME -->
+            <section id="hero">
+                <!-- outlined cloud shapes -->
+                <div class="hero-cloud hero-cloud-1"></div>
+                <div class="hero-cloud hero-cloud-2"></div>
+                <div class="hero-cloud hero-cloud-3"></div>
+
+                <div class="hero-inner">
+                    <!-- Logo -->
+                    <img
+                        src="nobul-logo.png"
+                        alt="NOBUL logo"
+                        class="hero-logo"
+                    />
+
+                    <div class="hero-text">
+                        <h1 class="hero-title">
+                            Meet <span class="hero-highlight">NOBUL</span>
+                        </h1>
+                        <p class="hero-subtitle">
+                            Your AI ally for cutting through misinformation and finding arguments you can trust.
+                        </p>
+                    </div>
+
+                    <a href="#steps-1893" class="hero-scroll">
+                        <span class="hero-scroll-text">Scroll to see how it works</span>
+                        <span class="hero-scroll-arrow">↓</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- HOW IT WORKS / STEPS -->
+            <section id="steps-1893">
+                <div class="cs-container">
+
+                    <!-- Left: mini hero + download -->
+                    <div class="cs-left">
+                        <div class="cs-hero">
+                            <h2 class="cs-hero-title">
+                                NOBUL in 3 simple steps
+                            </h2>
+                            <!-- second hero line: reveal on scroll -->
+                            <p class="cs-hero-subtitle reveal-up">
+                                Turn long, messy arguments into clear, trustworthy insight — without having
+                                to pause, rewind, or fact-check for hours.
+                            </p>
+                        </div>
+
+                        <!-- download card: reveals on scroll -->
+                        <div class="cs-download-card reveal-up">
+                            <h3 class="cs-download-title">Download the Windows app</h3>
+                            <p class="cs-download-text">
+                                Run NOBUL on your desktop while you watch debates or videos.
+                                It quietly listens, analyzes, and highlights potential fallacies for you.
+                            </p>
+
+                            <a href="#" class="cs-download-btn">
+                                <span class="cs-btn-icon">
+                                    <svg class="cs-windows-logo" viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="2"  y="3"  width="9" height="8" />
+                                        <rect x="13" y="3"  width="9" height="8" />
+                                        <rect x="2"  y="13" width="9" height="8" />
+                                        <rect x="13" y="13" width="9" height="8" />
+                                    </svg>
+                                </span>
+                                <span class="cs-btn-text">Download for Windows</span>
+                            </a>
+
+                            <p class="cs-download-note">
+                                Windows 10+ · macOS & browser extension coming soon.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right: steps -->
+                    <div class="cs-wrapper">
+                        <div class="cs-content">
+                            <p class="cs-topper">HOW IT WORKS</p>
+                            <h2 class="cs-title">From debate to insight in seconds</h2>
+                        </div>
+
+                        <ul class="cs-card-group">
+                            <!-- each step reveals on scroll -->
+                            <li class="cs-item reveal-right">
+                                <div class="cs-number">1</div>
+                                <div class="cs-flex">
+                                    <h3 class="cs-h3">Play any debate or video</h3>
+                                    <p class="cs-item-text">
+                                        Open YouTube (or your video platform of choice), start the debate, and let
+                                        NOBUL quietly listen in the background.
+                                    </p>
+                                </div>
+                            </li>
+
+                            <li class="cs-item reveal-right">
+                                <div class="cs-number">2</div>
+                                <div class="cs-flex">
+                                    <h3 class="cs-h3">Click “Analyze last 2 minutes”</h3>
+                                    <p class="cs-item-text">
+                                        Tell NOBUL when to analyze. It grabs the recent transcript and looks
+                                        for common logical fallacies and weak reasoning.
+                                    </p>
+                                </div>
+                            </li>
+
+                            <li class="cs-item reveal-right">
+                                <div class="cs-number">3</div>
+                                <div class="cs-flex">
+                                    <h3 class="cs-h3">See fallacies and counter-examples</h3>
+                                    <p class="cs-item-text">
+                                        Get clear labels like “Strawman” or “Ad hominem”, plus short explanations
+                                        and counter-examples to help you respond or think more critically.
+                                    </p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </section>
+        </div>
+
+        <!-- ============================================ -->
+        <!--         TRY ME OUT OVERLAY (no scroll)      -->
+        <!-- ============================================ -->
+        <div id="chat-overlay" class="chat-overlay">
+            <div class="chat-overlay-backdrop" data-close="true"></div>
+            <section class="chat-shell">
+                <div class="chat-card">
+                    <button type="button" class="chat-close-btn" data-close="true">×</button>
+
+                    <div class="chat-header">
+                        <h1 class="chat-title">Try NOBUL</h1>
+                        <p class="chat-subtitle">
+                            Paste a debate snippet, argument, or claim. In the future, NOBUL will analyze it
+                            for potential fallacies and weak reasoning.
+                        </p>
+                    </div>
+
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message chat-message-assistant">
+                            <div class="chat-message-label">NOBUL</div>
+                            <div class="chat-message-bubble">
+                                Imagine this is connected to the fallacy detector. Type something below and
+                                hit <strong>Send</strong> to see how the conversation would flow.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form class="chat-input-row" id="chat-form">
+                        <textarea
+                            id="chat-input"
+                            class="chat-input"
+                            rows="2"
+                            placeholder="Ask a question, paste an argument, or say hello..."
+                        ></textarea>
+                        <button type="submit" class="chat-send-btn">Send</button>
+                    </form>
+                    <p id="chat-analysis"></p>
+                    <p class="chat-footer-note">
+                        This is a front-end preview. We’ll hook this up to your backend model later so it can
+                        actually analyze arguments and flag fallacies.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ============================================ -->
+    <!--        Scroll + Nav + Chat JavaScript       -->
+    <!-- ============================================ -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            /* ---- scroll-triggered animations for Home ---- */
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        obs.unobserve(entry.target); // animate only once
+                    }
+                });
+            }, { threshold: 0.25 });
+
+            document.querySelectorAll('.reveal-up, .reveal-right').forEach((el) => {
+                observer.observe(el);
+            });
+
+            /* ---- fade nav buttons out on scroll ---- */
+            const navLinksContainer = document.querySelector('.nav-links');
+            window.addEventListener('scroll', () => {
+                const y = window.scrollY || window.pageYOffset;
+                if (y > 60) {
+                    navLinksContainer.classList.add('nav-links-faded');
+                } else {
+                    navLinksContainer.classList.remove('nav-links-faded');
+                }
+            });
+
+            /* ---- open / close chat overlay ---- */
+            const overlay = document.getElementById('chat-overlay');
+            const navLinks = document.querySelectorAll('.nav-link[data-target]');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const target = link.dataset.target;
+                    if (target === 'try') {
+                        e.preventDefault();
+                        overlay.classList.add('chat-overlay-open');
+                    } else if (target === 'home') {
+                        // just close overlay if open; don't scroll anywhere
+                        e.preventDefault();
+                        overlay.classList.remove('chat-overlay-open');
+                    }
+                });
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target.dataset.close === 'true') {
+                    overlay.classList.remove('chat-overlay-open');
+                }
+            });
+
+            /* ---- chat stub behavior in overlay ---- */
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('chat-input');
+            const messages = document.getElementById('chat-messages');
+
+            if (form && input && messages) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const text = input.value.trim();
+                    if (!text) return;
+
+                    const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                    // Add user message
+                    const userMsg = document.createElement('div');
+                    userMsg.className = 'chat-message chat-message-user';
+                    userMsg.innerHTML = `
+                        <div class="chat-message-label">You</div>
+                        <div class="chat-message-bubble">${safeText}</div>
+                    `;
+                    messages.appendChild(userMsg);
+
+                    // Placeholder assistant reply
+                    const reply = document.createElement('div');
+                    reply.className = 'chat-message chat-message-assistant';
+                    reply.innerHTML = `
+                        <div class="chat-message-label">NOBUL</div>
+                        <div class="chat-message-bubble chat-message-placeholder">
+                            When the backend is connected, this is where your analysis will appear.
+                        </div>
+                    `;
+                    messages.appendChild(reply);
+
+                    messages.scrollTop = messages.scrollHeight;
+                    input.value = '';
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
