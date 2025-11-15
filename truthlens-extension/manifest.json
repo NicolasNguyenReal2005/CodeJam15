@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "TruthLens",
+  "name": "NOBUL",
+  "version": "1.0",
+  "description": "Analyze text or YouTube links for logical fallacies, misinformation, and AI-generated content.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TruthLens"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ]
+  ,
+  "host_permissions": [
+    "https://api.zyte.com/*",
+    "http://localhost:8000/*",
+    "<all_urls>"
+  ]
+}
