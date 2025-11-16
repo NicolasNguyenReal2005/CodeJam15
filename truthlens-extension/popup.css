@@ -1,9 +1,20 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #ffffff;
+
+  /*  Glass effect background */
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
   color: #1a1a1a;
+
+  /* ✨ Round the corners of the popup */
+  border-radius: 20px;
+  overflow: hidden;
 }
+
+
 
 .container {
   width: 360px;
@@ -20,14 +31,82 @@ h1 {
   margin: 0 0 12px;
   font-size: 12px;
   color: #666666;
+  font-weight: 500;
+  margin-bottom: 4px;
 }
 
+/* Medieval-style mode selector */
 .mode-switch {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
   margin-bottom: 8px;
-  font-size: 13px;
+
+  /* parchment card */
+  /* background: #fdf6ec; */
+  border-radius: 10px;
+  border: 1px; /* solid #e0c9a6; */
+  padding: 6px 10px;
+  /* box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); */
 }
+
+/* medieval option */
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+/* hide native radio */
+.mode-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* label text – medieval serif */
+.mode-option span {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #4a2412;
+}
+
+
+/* wax seal (base state – just an empty gold ring) */
+.mode-option span::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+
+  border-radius: 50%;
+  border: 2px solid #b37a2c;
+  background: transparent;           /* ⬅ no tan fill */
+  margin-right: 6px;
+
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+
+/* selected → red wax seal */
+.mode-option input:checked + span::before {
+  background: radial-gradient(circle at 30% 30%, #ffcfdd, #dc143c);
+  border-color: #8f0f2f;
+  box-shadow: 0 0 4px rgba(220, 20, 60, 0.6);
+}
+
+/* hover */
+.mode-option:hover span {
+  color: #752f16;
+}
+
+
 
 .mode-switch label {
   color: #1a1a1a;
@@ -44,6 +123,11 @@ textarea {
   color: #1a1a1a;
   font-size: 13px;
   margin-bottom: 8px;
+
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+
+  margin-bottom: 8px;
 }
 
 textarea:focus {
@@ -54,24 +138,39 @@ textarea:focus {
 
 button {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: none;
-  border-radius: 999px;
-  background: #dc143c;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #dc143c, #b81232);
   color: white;
   font-weight: 600;
   cursor: pointer;
   margin-bottom: 8px;
+  font-size: 14px;
+
+  /* subtle shadow + smooth transition */
+  box-shadow: 0 4px 10px rgba(220, 20, 60, 0.25);
+  transition: all 0.25s ease;
 }
 
 button:hover {
-  background: #b81830;
+  background: linear-gradient(135deg, #e51a46, #c21434);
+  box-shadow: 0 6px 14px rgba(220, 20, 60, 0.32);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0px);
+  box-shadow: 0 2px 6px rgba(220, 20, 60, 0.2);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: default;
+  transform: none;
+  box-shadow: none;
 }
+
 
 .status {
   min-height: 18px;
@@ -126,3 +225,25 @@ button:disabled {
   color: #b81830;
   margin-bottom: 2px;
 }
+
+.header-row {
+  position: relative;          /* allow absolute positioning inside */
+  margin-bottom: 4px;          /* tighter spacing under header */
+}
+
+/* keep title/subtitle on the left, leave room so they don't sit under the knight */
+.header-text {
+  margin-right: 120px;         /* space reserved for the avatar overlay */
+  min-width: 0;
+}
+
+/* avatar overlay in the top-right corner */
+.nobul-avatar {
+  position: absolute;
+  top: -6px;                   /* move up a bit so it overlaps nicely */
+  right: -4px;                 /* hug the right edge */
+  width: 150px;                /* adjust size to taste */
+  height: auto;
+  pointer-events: none;        /* clicks pass through, avoids weird hover issues */
+}
+

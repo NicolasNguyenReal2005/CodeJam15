@@ -1,27 +1,45 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Literal, List, Dict, Any
+from typing import List, Dict, Any
 import os
 import json
 
 import google.generativeai as genai
+from groq import Groq
+
+# OpenAI client (new SDK)
+from openai import OpenAI
+client = OpenAI()
 
 # ===========================
-# GEMINI CLIENT SETUP
+# API KEYS / CLIENTS
 # ===========================
-# Make sure you set:
-#   export GEMINI_API_KEY="AIza..."
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-GEMINI_MODEL_NAME = "gemini-2.5-flash"
-model = genai.GenerativeModel(
-    GEMINI_MODEL_NAME,
-    generation_config={
-        # Ask Gemini to return raw JSON, not prose/markdown
-        "response_mime_type": "application/json",
-        "temperature": 0.0,
-    },
-)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# --- Gemini ---
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    GEMINI_MODEL_NAME = "gemini-2.5-flash"
+    gemini_model = genai.GenerativeModel(
+        GEMINI_MODEL_NAME,
+        generation_config={
+            # Ask Gemini to return raw JSON, not prose/markdown
+            "response_mime_type": "application/json",
+            "temperature": 0.0,
+        },
+    )
+else:
+    gemini_model = None
+
+# --- Groq ---
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+# --- OpenAI ---
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
 
 def extract_json_block(text: str) -> str:
     """
@@ -34,14 +52,12 @@ def extract_json_block(text: str) -> str:
 
     # Remove markdown fences if present
     if "```" in text:
-        # remove ```json and ``` fences
         text = text.replace("```json", "").replace("```", "").strip()
 
-    # As a backup: take from first '{' to last '}'
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
-        return text[start:end+1].strip()
+        return text[start : end + 1].strip()
 
     return text.strip()
 
@@ -59,10 +75,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class AnalyzeRequest(BaseModel):
-    # We keep "youtube" as an option but just return a placeholder for now
-    mode: Literal["text", "youtube"]
+    # Only text mode now
     content: str
+
 
 @app.get("/")
 def health():
@@ -70,17 +87,9 @@ def health():
 
 
 # ===========================
-# COUNCIL OF GEMINI JUDGES
+# SHARED JSON SCHEMA PROMPT
 # ===========================
 
-# Three different "personas" looking at the same text
-JUDGE_ROLES = [
-    "a university professor of logic and critical thinking",
-    "an investigative journalist specializing in fact-checking misinformation",
-    "a researcher in AI safety and online persuasion analysis",
-]
-
-# Shared JSON schema + instructions for every judge
 BASE_JSON_SCHEMA_TEXT = """
 You MUST return ONLY valid JSON with this exact structure:
 
@@ -97,7 +106,6 @@ You MUST return ONLY valid JSON with this exact structure:
       "citation": "string"
     }
   ],
-  "ai_generated_likelihood": "low" | "medium" | "high",
   "ai_explanation": "string"
 }
 
@@ -110,120 +118,232 @@ Do NOT include any text outside the JSON.
 """
 
 
-def run_single_judge(role_description: str, text: str) -> Dict[str, Any]:
-    """
-    Run ONE Gemini judge with a given role/persona on the text.
-    Returns a dict matching the schema, or a safe fallback if JSON parsing fails.
-    """
-    prompt = (
-        f"You are {role_description}.\n"
-        "Analyze the following text for logical fallacies, credibility, "
-        "and likelihood of being AI-generated.\n"
-        + BASE_JSON_SCHEMA_TEXT
-        + "\n\nText to analyze:\n\n"
-        + text
-    )
+# ===========================
+# INDIVIDUAL JUDGES (OPENAI + GROQ)
+# ===========================
 
-    response = model.generate_content(prompt)
-    model_output = response.text or ""
-
-    try:
-        result = json.loads(model_output)
-    except Exception:
-        # Fallback so the rest of the pipeline doesn't crash
-        result = {
+def run_openai_judge(role_description: str, judge_name: str, text: str) -> Dict[str, Any]:
+    """
+    Judge #1 – OpenAI
+    """
+    if not openai_client:
+        return {
+            "provider": "openai",
+            "name": judge_name,
             "credibility_score": 50,
-            "notes": "Model did not return valid JSON. Raw output attached.",
+            "notes": "OpenAI API key missing; this judge is inactive.",
             "fallacies": [],
-            "ai_generated_likelihood": "medium",
-            "ai_explanation": "Parsing error for this judge.",
-            "raw_model_output": model_output,
+            "ai_explanation": "Judge disabled due to missing API key.",
         }
 
+    system_prompt = (
+        f"You are {role_description}.\n"
+        "Analyze the following text for logical fallacies and credibility of its claims. "
+        "Keep it concise and precise.\n"
+        + BASE_JSON_SCHEMA_TEXT
+    )
+
+    try:
+        resp = openai_client.chat.completions.create(
+            model="gpt-4o",  # you can change model here
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text},
+            ],
+            temperature=0.0,
+        )
+        raw_output = resp.choices[0].message.content
+        cleaned = extract_json_block(raw_output)
+        result = json.loads(cleaned)
+    except Exception as e:
+        result = {
+            "credibility_score": 50,
+            "notes": f"OpenAI parsing/error: {e}",
+            "fallacies": [],
+            "ai_explanation": "Parsing error for this judge.",
+            "raw_model_output": str(locals().get("raw_output", "")),
+        }
+
+    result["provider"] = "openai"
+    result["name"] = judge_name
     return result
 
 
-def aggregate_council_results(judge_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+def run_groq_judge(model_name: str, judge_name: str, text: str) -> Dict[str, Any]:
     """
-    Combine all judge outputs into a single final verdict.
-    - credibility_score = average of judges
-    - ai_generated_likelihood = average vote over {low, medium, high}
-    - fallacies = union of all fallacies (dedupe by type+quote)
-    - notes, ai_explanation = concatenated summaries from all judges
+    Judge #2 – Groq
     """
-    # --- credibility_score average ---
-    scores = [
-        r.get("credibility_score", 50)
-        for r in judge_results
-        if isinstance(r.get("credibility_score", None), (int, float))
-    ]
-    final_score = int(round(sum(scores) / len(scores))) if scores else 50
+    if not groq_client:
+        return {
+            "provider": "groq",
+            "name": judge_name,
+            "credibility_score": 50,
+            "notes": "Groq API key missing; this judge is inactive.",
+            "fallacies": [],
+            "ai_explanation": "Judge disabled due to missing API key.",
+        }
 
-    # --- ai_generated_likelihood vote average ---
-    label_to_int = {"low": 0, "medium": 1, "high": 2}
-    int_to_label = {0: "low", 1: "medium", 2: "high"}
+    system_prompt = (
+        "You are a university professor of logic and critical thinking. "
+        "You are an investigative journalist specializing in fact-checking online claims. "
+        "You analyze text for logical fallacies and credibility. "
+        "Provide enough information to educate the user while keeping it concise.\n"
+        + BASE_JSON_SCHEMA_TEXT
+    )
 
-    votes = []
-    for r in judge_results:
-        label = str(r.get("ai_generated_likelihood", "medium")).lower()
-        if label in label_to_int:
-            votes.append(label_to_int[label])
+    try:
+        resp = groq_client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text},
+            ],
+            temperature=0.0,
+        )
+        raw_output = resp.choices[0].message.content
+        cleaned = extract_json_block(raw_output)
+        result = json.loads(cleaned)
+    except Exception as e:
+        result = {
+            "credibility_score": 50,
+            "notes": f"Groq parsing error: {e}",
+            "fallacies": [],
+            "ai_explanation": "Parsing error for this judge.",
+            "raw_model_output": str(locals().get("raw_output", "")),
+        }
 
-    if votes:
-        avg_vote = round(sum(votes) / len(votes))
-        final_ai_likelihood = int_to_label.get(avg_vote, "medium")
-    else:
-        final_ai_likelihood = "medium"
+    result["provider"] = "groq"
+    result["name"] = judge_name
+    return result
 
-    # --- merge fallacies, dedupe by (type, quote) ---
-    seen = set()
-    merged_fallacies = []
-    for r in judge_results:
-        fallacies = r.get("fallacies", [])
-        if not isinstance(fallacies, list):
-            continue
-        for f in fallacies:
-            if not isinstance(f, dict):
+
+# ===========================
+# GEMINI SUMMARY OF OPENAI + GROQ
+# ===========================
+
+def make_gemini_summary(judge_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Gemini reads the OpenAI + Groq judge outputs and produces
+    a single fused verdict in the SAME JSON schema as BASE_JSON_SCHEMA_TEXT
+    (without any AI-detection fields).
+    """
+    # If Gemini unavailable, fall back to a simple local fusion
+    if not gemini_model:
+        if not judge_results:
+            return {
+                "provider": "fallback",
+                "name": "Local Fallback Summary",
+                "credibility_score": 50,
+                "notes": "No judges available; neutral fallback.",
+                "fallacies": [],
+                "ai_explanation": "No judge outputs available.",
+            }
+
+        # Simple average + merged fallacies as a fallback
+        scores = [
+            j.get("credibility_score", 50)
+            for j in judge_results
+            if isinstance(j.get("credibility_score"), (int, float))
+        ]
+        avg_score = int(round(sum(scores) / len(scores))) if scores else 50
+
+        seen = set()
+        merged_fallacies = []
+        for j in judge_results:
+            fallacies = j.get("fallacies", [])
+            if not isinstance(fallacies, list):
                 continue
-            key = (f.get("type", ""), f.get("quote", ""))
-            if key in seen:
-                continue
-            seen.add(key)
-            merged_fallacies.append({
-                "type": f.get("type", "Unknown"),
-                "quote": f.get("quote", ""),
-                "explanation": f.get("explanation", ""),
-                "counterexample": f.get("counterexample", ""),
-                "peer_reviewed_counterargument": f.get("peer_reviewed_counterargument", ""),
-                "citation": f.get("citation", ""),
-            })
+            for f in fallacies:
+                if not isinstance(f, dict):
+                    continue
+                key = (f.get("type", ""), f.get("quote", ""))
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged_fallacies.append(f)
 
-    # --- combine notes from judges ---
-    notes_parts = []
-    for i, r in enumerate(judge_results):
-        label = f"Judge {i+1}"
-        n = r.get("notes", "")
-        if n:
-            notes_parts.append(f"{label}: {n}")
-    combined_notes = " | ".join(notes_parts) if notes_parts else "Council summary generated."
+        explanation = (
+            f"Fallback summary combining {len(judge_results)} judges. "
+            f"Average credibility score is {avg_score}/100."
+        )
 
-    # --- combine ai_explanation from judges ---
-    ai_expl_parts = []
-    for i, r in enumerate(judge_results):
-        label = f"Judge {i+1}"
-        expl = r.get("ai_explanation", "")
-        if expl:
-            ai_expl_parts.append(f"{label}: {expl}")
-    combined_ai_expl = " | ".join(ai_expl_parts) if ai_expl_parts else "Council consensus explanation."
+        return {
+            "provider": "fallback",
+            "name": "Local Fallback Summary",
+            "credibility_score": avg_score,
+            "notes": "Fallback fusion of OpenAI and Groq when Gemini is unavailable.",
+            "fallacies": merged_fallacies,
+            "ai_explanation": explanation,
+        }
 
-    return {
-        "credibility_score": final_score,
-        "notes": combined_notes,
-        "fallacies": merged_fallacies,
-        "ai_generated_likelihood": final_ai_likelihood,
-        "ai_explanation": combined_ai_expl,
-        "council": judge_results,  # raw per-judge details (for debugging / future UI)
-    }
+    # Normal path: Gemini summarizes
+    judges_json = json.dumps(judge_results, indent=2)
+
+    prompt = f"""
+You are an AI that summarizes the opinions of two expert judges (OpenAI and Groq).
+
+You are given a JSON array of exactly TWO judge results who analyzed the same text.
+Each element in the array has this shape:
+- provider (e.g. "openai", "groq")
+- name
+- credibility_score
+- fallacies
+- ai_explanation
+- notes
+- possibly other fields
+
+Your task:
+1. Carefully read both judge outputs.
+2. Identify common points (where they agree).
+3. Identify important differences (where they disagree).
+4. Produce a SINGLE fused verdict that:
+   - Uses the SAME JSON schema as in BASE_JSON_SCHEMA_TEXT:
+     {{
+       "credibility_score": number 0-100,
+       "notes": "short string",
+       "fallacies": [
+         {{
+           "type": "string",
+           "quote": "string",
+           "explanation": "string",
+           "counterexample": "string",
+           "peer_reviewed_counterargument": "string",
+           "citation": "string"
+         }}
+       ],
+       "ai_explanation": "string"
+     }}
+
+Guidelines:
+- "credibility_score" should be consistent with both judges' reasoning (e.g. average or weighted by confidence).
+- "notes" should be a short, direct summary of the overall credibility.
+- "fallacies" should merge the important fallacies identified by the judges without duplication.
+- "ai_explanation" should explain, in 2–4 sentences, how you reconciled both judges' opinions.
+- "counterexample", "peer_reviewed_counterargument", and "citation" fields in each fallacy should be taken from the judge that provided them, prioritizing completeness and academic rigor.
+Return ONLY valid JSON in the above schema. Do not add extra fields.
+
+Judges JSON:
+{judges_json}
+"""
+
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw_output = response.text or ""
+        cleaned = extract_json_block(raw_output)
+        result = json.loads(cleaned)
+    except Exception as e:
+        result = {
+            "credibility_score": 50,
+            "notes": f"Gemini summary error: {e}",
+            "fallacies": [],
+            "ai_explanation": "Gemini failed to summarize. Using neutral fallback.",
+            "raw_model_output": str(locals().get("raw_output", "")),
+        }
+
+    # Optional metadata (not required by extension, but not harmful)
+    result["provider"] = "gemini"
+    result["name"] = "Gemini – Fused Verdict"
+    return result
 
 
 # ===========================
@@ -234,9 +354,7 @@ def aggregate_council_results(judge_results: List[Dict[str, Any]]) -> Dict[str, 
 async def analyze(request: AnalyzeRequest):
     """
     Main endpoint used by the extension.
-
-    - mode = "text": analyze raw content
-    - mode = "youtube": currently not implemented; returns a friendly message
+    Analyzes raw text content only.
     """
     raw_content = request.content.strip()
 
@@ -245,21 +363,9 @@ async def analyze(request: AnalyzeRequest):
             "credibility_score": 0,
             "notes": "No input provided.",
             "fallacies": [],
-            "ai_generated_likelihood": "low",
             "ai_explanation": "No content to analyze.",
         }
 
-    # For now, we only support text mode; YouTube will be implemented later.
-    if request.mode == "youtube":
-        return {
-            "credibility_score": 0,
-            "notes": "YouTube analysis is not implemented yet. Please switch to Text mode.",
-            "fallacies": [],
-            "ai_generated_likelihood": "medium",
-            "ai_explanation": "This is a placeholder; your teammates will add transcript support here.",
-        }
-
-    # Text mode: analyze the text directly
     text = raw_content
 
     # Truncate very long content to keep prompts reasonable
@@ -267,21 +373,46 @@ async def analyze(request: AnalyzeRequest):
         text = text[:4000]
 
     try:
-        # Run all judges sequentially
-        judge_results: List[Dict[str, Any]] = []
-        for role in JUDGE_ROLES:
-            jr = run_single_judge(role, text)
-            judge_results.append(jr)
+        # --- BACKEND ONLY: run the 2 main judges (OpenAI + Groq) ---
+        judges: List[Dict[str, Any]] = []
 
-        final_result = aggregate_council_results(judge_results)
-        return final_result
+        # Judge 1: OpenAI – Reasoning expert
+        judges.append(
+            run_openai_judge(
+                role_description="a philosophy professor and expert in reasoning, epistemology, and critical analysis",
+                judge_name="OpenAI – Reasoning Expert",
+                text=text,
+            )
+        )
+
+        # Judge 2: Groq – Investigative journalist / logic professor
+        judges.append(
+            run_groq_judge(
+                model_name="llama-3.1-8b-instant",
+                judge_name="Groq – Investigative Journalist",
+                text=text,
+            )
+        )
+
+        # --- FINAL VERDICT: Gemini summarizes OpenAI + Groq ---
+        final_verdict = make_gemini_summary(judges)
+
+        # --- OUTPUT ONLY THE FINAL VERDICT TO THE EXTENSION ---
+        return {
+            "credibility_score": final_verdict["credibility_score"],
+            "notes": final_verdict["notes"],
+            "fallacies": final_verdict["fallacies"],
+            "ai_explanation": final_verdict["ai_explanation"],
+            # optional metadata
+            "provider": final_verdict.get("provider", "gemini"),
+            "judge_name": final_verdict.get("name", "Gemini – Fused Verdict"),
+        }
 
     except Exception as e:
         # Fail-safe response so your extension never breaks
         return {
             "credibility_score": 50,
-            "notes": f"Error running council: {str(e)}",
+            "notes": f"Error running judges: {str(e)}",
             "fallacies": [],
-            "ai_generated_likelihood": "medium",
             "ai_explanation": "Backend error, using fallback.",
         }

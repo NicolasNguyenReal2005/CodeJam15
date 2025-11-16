@@ -1,10 +1,24 @@
 const analyzeBtn = document.getElementById("analyzeBtn");
 const inputField = document.getElementById("inputField");
-const useSelectionToggle = document.getElementById("useSelectionToggle");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 
-const STORAGE_PREFIX = "analysis_";  // key prefix for chrome.storage
+const STORAGE_PREFIX = "analysis_"; // key prefix for chrome.storage
+
+// Save input text as the user types
+inputField.addEventListener("input", () => {
+  const content = inputField.value;
+  chrome.storage.local.set({ lastInput: content });
+});
+
+// Save selected mode when user clicks Text / Scan Text
+const modeRadios = document.querySelectorAll('input[name="mode"]');
+modeRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    chrome.storage.local.set({ lastMode: radio.value });
+  });
+});
+
 
 function getSelectedMode() {
   const radios = document.querySelectorAll('input[name="mode"]');
@@ -16,13 +30,14 @@ function getSelectedMode() {
 
 function setLoading(isLoading) {
   analyzeBtn.disabled = isLoading;
-  if (useSelectionToggle) useSelectionToggle.disabled = isLoading;
   statusEl.textContent = isLoading ? "Analyzing..." : "";
 }
 
 /* ===========================
    STORAGE HELPERS
    =========================== */
+
+
 
 function saveAnalysis(mode, content, data) {
   // Save analysis per active tab
@@ -35,7 +50,7 @@ function saveAnalysis(mode, content, data) {
       mode,
       content,
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     chrome.storage.local.set({ [key]: payload });
@@ -50,12 +65,21 @@ function restoreAnalysisForCurrentTab() {
 
     chrome.storage.local.get(key, (items) => {
       const saved = items[key];
-      if (!saved) return;
 
-      // Restore mode (text / youtube)
+      if (!saved) {
+        // No previous analysis for this tab.
+        // If Scan Text mode is selected and the textarea is empty, auto-scan selection.
+        const mode = getSelectedMode();
+        if (mode === "ScanText" && !inputField.value.trim()) {
+          populateFromSelection();
+        }
+        return;
+      }
+
+      // Restore mode (text / ScanText)
       const radios = document.querySelectorAll('input[name="mode"]');
       radios.forEach((r) => {
-        r.checked = (r.value === saved.mode);
+        r.checked = r.value === saved.mode;
       });
 
       // Restore text
@@ -71,6 +95,8 @@ function restoreAnalysisForCurrentTab() {
     });
   });
 }
+
+
 
 /* ===========================
    RENDER RESULTS
@@ -140,43 +166,7 @@ function renderResults(data) {
     });
   }
 
-  // ---- AI-generated assessment ----
-  if (data.ai_generated_likelihood) {
-    const aiCard = document.createElement("div");
-    aiCard.className = "result-card";
-
-    let aiByJudgeHtml = "";
-    if (council.length) {
-      aiByJudgeHtml =
-        `<div class="judge-notes-block">` +
-        council
-          .map((judge, idx) => {
-            const expl = judge.ai_explanation || "";
-            if (!expl) return "";
-            return `
-              <div class="judge-note">
-                <div class="judge-title">Judge ${idx + 1}</div>
-                <div>${expl}</div>
-              </div>
-            `;
-          })
-          .join("") +
-        `</div>`;
-    }
-
-    aiCard.innerHTML = `
-      <h3>AI-Generated Assessment</h3>
-      <div><span class="result-label">Likelihood:</span> ${data.ai_generated_likelihood}</div>
-      ${
-        aiByJudgeHtml
-          ? aiByJudgeHtml
-          : data.ai_explanation
-          ? `<div><span class="result-label">Why:</span> ${data.ai_explanation}</div>`
-          : ""
-      }
-    `;
-    resultsEl.appendChild(aiCard);
-  }
+  // (AI-generated section removed in backend – this block will simply never render)
 
   if (!resultsEl.innerHTML) {
     resultsEl.textContent = "No detailed analysis returned.";
@@ -189,10 +179,10 @@ function renderResults(data) {
 
 analyzeBtn.addEventListener("click", async () => {
   const content = inputField.value.trim();
-  const mode = getSelectedMode();
+  const mode = getSelectedMode(); // used only for saving/restoring
 
   if (!content) {
-    statusEl.textContent = "Please paste some text or a YouTube URL.";
+    statusEl.textContent = "Please paste/scan some text to analyze.";
     return;
   }
 
@@ -203,9 +193,10 @@ analyzeBtn.addEventListener("click", async () => {
     const response = await fetch("http://localhost:8000/analyze", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ mode, content })
+      // backend now only expects { content }
+      body: JSON.stringify({ content }),
     });
 
     if (!response.ok) {
@@ -225,67 +216,92 @@ analyzeBtn.addEventListener("click", async () => {
 });
 
 /* ===========================
-   SELECTION HANDLING (unchanged)
+   SELECTION HANDLING (Scan Text)
    =========================== */
 
-// Populate textarea from highlighted selection on the active tab
-async function populateFromSelection() {
-  if (!useSelectionToggle || !useSelectionToggle.checked) return;
+// Grab highlighted selection from the active tab and put it in the textarea
+function populateFromSelection() {
   statusEl.textContent = "Fetching selection from page...";
 
-  try {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (!tabs || !tabs[0]) {
-        statusEl.textContent = "No active tab.";
-        return;
-      }
-      const tabId = tabs[0].id;
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) {
+      statusEl.textContent = "No active tab.";
+      return;
+    }
+    const tabId = tabs[0].id;
 
-      try {
-        chrome.scripting.executeScript(
-          { target: { tabId }, func: () => window.getSelection().toString() },
-          (injectionResults) => {
-            if (chrome.runtime.lastError) {
-              console.error(chrome.runtime.lastError);
-              statusEl.textContent = "Cannot access page selection.";
-              return;
-            }
-
-            if (!injectionResults || !injectionResults[0] || !injectionResults[0].result) {
-              statusEl.textContent = "No text selected on the page.";
-              return;
-            }
-
-            const selected = injectionResults[0].result;
-            if (selected && selected.trim().length > 0) {
-              inputField.value = selected.trim();
-              statusEl.textContent = "Selection loaded into input.";
-            } else {
-              statusEl.textContent = "No text selected on the page.";
-            }
+    try {
+      chrome.scripting.executeScript(
+        { target: { tabId }, func: () => window.getSelection().toString() },
+        (injectionResults) => {
+          if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError);
+            statusEl.textContent = "Cannot access page selection.";
+            return;
           }
-        );
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = "Error reading selection.";
-      }
-    });
-  } catch (err) {
-    console.error(err);
-    statusEl.textContent = "Error fetching tab.";
-  }
-}
 
-// When the toggle changes, attempt to populate from selection
-if (useSelectionToggle) {
-  useSelectionToggle.addEventListener("change", () => {
-    if (useSelectionToggle.checked) populateFromSelection();
-    else statusEl.textContent = "";
+          if (!injectionResults || !injectionResults[0] || !injectionResults[0].result) {
+            statusEl.textContent = "No text selected on the page.";
+            return;
+          }
+
+          const selected = injectionResults[0].result;
+          if (selected && selected.trim().length > 0) {
+            inputField.value = selected.trim();
+            statusEl.textContent = "Selection loaded into input.";
+          } else {
+            statusEl.textContent = "No text selected on the page.";
+          }
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "Error reading selection.";
+    }
   });
-
-  // If the popup opened and the toggle was previously checked, try to fetch selection
-  if (useSelectionToggle.checked) populateFromSelection();
 }
 
-// Restore previous analysis when popup opens
+// Wire the "Scan Text" radio to trigger selection capture immediately
+const textRadio = document.querySelector('input[name="mode"][value="text"]');
+const scanRadio = document.querySelector('input[name="mode"][value="ScanText"]');
+
+if (scanRadio) {
+  scanRadio.addEventListener("change", () => {
+    if (scanRadio.checked) {
+      populateFromSelection();
+    }
+  });
+}
+
+if (textRadio) {
+  textRadio.addEventListener("change", () => {
+    if (textRadio.checked) {
+      statusEl.textContent = "";
+    }
+  });
+}
+
+/* ===========================
+    RESTORE SETTINGS
+   =========================== */
+
+   function restoreGlobalSettings() {
+  chrome.storage.local.get(["lastInput", "lastMode"], (items) => {
+    // Restore text
+    if (typeof items.lastInput === "string") {
+      inputField.value = items.lastInput;
+    }
+
+    // Restore mode
+    if (items.lastMode) {
+      const radios = document.querySelectorAll('input[name="mode"]');
+      radios.forEach((r) => {
+        r.checked = (r.value === items.lastMode);
+      });
+    }
+  });
+}
+
+// Call this when popup opens
+restoreGlobalSettings();
 restoreAnalysisForCurrentTab();
