@@ -1,0 +1,875 @@
+/* ===============================
+   Global theme
+   =============================== */
+
+:root {
+    --crimson: #dc143c;
+    --soft-white: #f9fafb;
+    --dark-text: #111827;
+    --muted-text: #4b5563;
+
+    /* page-wide seamless gradient */
+    --page-bg: linear-gradient(
+        180deg,
+        #ffe4ea 0%,
+        #ffecee 30%,
+        #fff6f8 60%,
+        #ffffff 100%
+    );
+
+    --nav-blue: #1f73c7;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--page-bg);
+    color: var(--dark-text);
+}
+
+/* ===============================
+   Top navigation (transparent)
+   =============================== */
+
+.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: transparent;
+    padding: 0.75rem 1.5rem;
+}
+
+.nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* only right-side buttons now */
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
+/* faded-out state when scrolling */
+.nav-links-faded {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+.nav-link {
+    position: relative;
+    font-size: 0.95rem;
+    color: var(--dark-text);
+    text-decoration: none;
+    font-weight: 500;
+    padding-bottom: 0.15rem;
+}
+
+.nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.2rem;
+    height: 2px;
+    background: var(--nav-blue);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.18s ease-out;
+}
+
+.nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+/* main button ("Home") a bit stronger */
+.nav-link-primary {
+    font-weight: 700;
+}
+
+@media (max-width: 700px) {
+    .nav-links {
+        gap: 1.25rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* ===============================
+   HERO / WELCOME SECTION
+   =============================== */
+
+#hero {
+    position: relative;
+    min-height: 115vh;
+    padding: 5rem 1.5rem 4rem;
+    background: transparent;  /* uses body gradient for seamless look */
+    overflow: hidden;
+    z-index: 0;
+}
+
+.hero-inner {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 80vh;
+}
+
+.hero-text {
+    max-width: 650px;
+}
+
+/* Logo in the empty top-right of hero */
+.hero-logo {
+    position: absolute;
+    /* line up roughly with the top of "Meet Nobull" */
+    top: 0.30rem;
+    right: -5rem;
+
+    /* 300% of original size (110px → 330px) */
+    width: 660px;
+    max-width: 50vw;
+    justify-self: right;
+    opacity: 0;
+    transform: translateY(-50px) scale(0.96);  /* drop in from above */
+    animation: heroLogoIn 0.9s ease-out forwards;
+    animation-delay: 0.4s;
+}
+
+
+
+
+
+
+/* outlined clouds */
+
+.hero-cloud {
+    position: absolute;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    background: transparent;
+    opacity: 0.9;
+    animation: cloudDrift 40s linear infinite;
+    z-index: 0;
+}
+
+.hero-cloud-1 {
+    width: 260px;
+    height: 90px;
+    top: 18%;
+    left: -130px;
+}
+
+.hero-cloud-2 {
+    width: 320px;
+    height: 110px;
+    top: 45%;
+    right: -170px;
+    animation-duration: 55s;
+}
+
+.hero-cloud-3 {
+    width: 210px;
+    height: 80px;
+    bottom: 15%;
+    left: 42%;
+    animation-duration: 48s;
+}
+
+/* Hero text styles */
+
+.hero-title {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: clamp(2.8rem, 5vw, 4rem);
+    line-height: 1.05;
+    font-weight: 600;
+    margin: 0 0 1rem;
+    color: #111827;
+    text-shadow: 0 4px 16px rgba(255, 255, 255, 0.95);
+    opacity: 0;
+    transform: translateX(-30px);
+    animation: fadeInLeft 0.9s ease-out forwards;
+    animation-delay: 0.1s;
+}
+
+.hero-highlight {
+    font-weight: 700;
+    color: var(--crimson);
+}
+
+.hero-subtitle {
+    margin: 0;
+    font-size: 1.05rem;
+    max-width: 30rem;
+    color: #374151;
+    line-height: 1.8;
+    opacity: 0;
+    transform: translateX(30px);
+    animation: fadeInRight 0.9s ease-out forwards;
+    animation-delay: 0.3s;
+}
+
+/* Scroll hint */
+
+.hero-scroll {
+    margin-top: 3.25rem;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: #111827;
+    text-decoration: none;
+    font-size: 0.9rem;
+    opacity: 0;
+    animation: fadeInUp 0.9s ease-out forwards;
+    animation-delay: 0.55s;
+}
+
+.hero-scroll-text {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.hero-scroll-arrow {
+    font-size: 1.55rem;
+    line-height: 1;
+    animation: bounceArrow 1.4s ease-in-out infinite;
+}
+
+/* ===============================
+   HOW IT WORKS / STEPS SECTION
+   =============================== */
+
+#steps-1893 {
+    position: relative;
+    padding: 4.5rem 1.5rem 4rem;
+    background: transparent; /* continuous with hero */
+    margin-top: 0;
+    z-index: 1;
+}
+
+.cs-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+    gap: 3rem;
+    align-items: stretch;
+}
+
+/* Left side */
+
+.cs-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2.25rem;
+    margin-top: 0.75rem;
+}
+
+.cs-hero-title {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: clamp(2.2rem, 3.5vw, 3rem);
+    line-height: 1.05;
+    font-weight: 600;
+    margin: 0;
+    color: var(--dark-text);
+}
+
+.cs-hero-subtitle {
+    margin: 1.2rem 0 0;
+    font-size: 0.98rem;
+    max-width: 32rem;
+    color: var(--muted-text);
+    line-height: 1.7;
+}
+
+/* Download card */
+
+.cs-download-card {
+    max-width: 420px;
+    width: 100%;
+    background: #ffffff;
+    border-radius: 1.1rem;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+    border: 1px solid rgba(220, 20, 60, 0.15);
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.cs-download-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--dark-text);
+}
+
+.cs-download-text {
+    margin: 0 0 1.2rem;
+    font-size: 0.95rem;
+    color: var(--muted-text);
+    line-height: 1.5;
+}
+
+/* Download button */
+
+.cs-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 1rem 0;
+    width: 100%;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff3355, #b01030);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(176, 16, 48, 0.55);
+    transition: transform 0.15s ease-out,
+                box-shadow 0.15s ease-out,
+                background 0.15s ease-out;
+}
+
+.cs-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(176, 16, 48, 0.7);
+    background: linear-gradient(135deg, #ff2045, #900c26);
+}
+
+.cs-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.cs-windows-logo {
+    width: 18px;
+    height: 18px;
+    fill: #ffffff;
+}
+
+.cs-btn-text {
+    white-space: nowrap;
+}
+
+.cs-download-note {
+    margin: 0.9rem 0 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* Right side */
+
+.cs-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.cs-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cs-topper {
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--crimson);
+}
+
+.cs-title {
+    font-size: 2.1rem;
+    line-height: 1.2;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Steps list */
+
+.cs-card-group {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.cs-item {
+    display: flex;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(220, 20, 60, 0.08);
+    transition: transform 0.18s ease-out,
+                box-shadow 0.18s ease-out,
+                border-color 0.18s ease-out;
+}
+
+.cs-item:hover {
+    transform: translateX(0) translateY(-3px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.09);
+    border-color: rgba(220, 20, 60, 0.25);
+}
+
+.cs-number {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    background: var(--crimson);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.cs-flex {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.cs-h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.cs-item-text {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--muted-text);
+    line-height: 1.5;
+}
+
+/* ===============================
+   Scroll-triggered reveal helpers
+   =============================== */
+
+.reveal-up,
+.reveal-right {
+    opacity: 0;
+}
+
+.reveal-up {
+    transform: translateY(25px);
+}
+
+.reveal-right {
+    transform: translateX(30px);
+}
+
+.reveal-up.is-visible {
+    animation: fadeInUp 0.9s ease-out forwards;
+}
+
+.reveal-right.is-visible {
+    animation: fadeInRight 0.8s ease-out forwards;
+}
+
+.cs-card-group .reveal-right.is-visible:nth-child(1) {
+    animation-delay: 0s;
+}
+.cs-card-group .reveal-right.is-visible:nth-child(2) {
+    animation-delay: 0.12s;
+}
+.cs-card-group .reveal-right.is-visible:nth-child(3) {
+    animation-delay: 0.24s;
+}
+
+/* ===============================
+   TRY ME OUT OVERLAY (with fade)
+   =============================== */
+
+.chat-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out, visibility 0s linear 0.25s;
+}
+
+.chat-overlay-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.25s ease-out;
+}
+
+.chat-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+/* center the chat card */
+.chat-shell {
+    position: relative;
+    margin: auto;
+    width: 100%;
+    max-width: 900px;
+    padding: 1.5rem;
+    pointer-events: none; /* clicks go to child card */
+}
+
+.chat-card {
+    pointer-events: auto;
+    background: #ffffff;
+    border-radius: 1.25rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(220, 20, 60, 0.15);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow: hidden;
+    position: relative;
+}
+
+/* close button */
+
+.chat-close-btn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.75rem;
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.1rem 0.3rem;
+}
+
+.chat-close-btn:hover {
+    color: #111827;
+}
+
+/* chat header / body */
+
+.chat-header {
+    padding: 1.4rem 1.75rem 0.75rem;
+}
+
+.chat-title {
+    margin: 0 0 0.4rem;
+    font-size: clamp(2rem, 3vw, 2.4rem);
+    font-family: "Georgia", "Times New Roman", serif;
+}
+
+.chat-subtitle {
+    margin: 0;
+    max-width: 36rem;
+    font-size: 0.98rem;
+    color: var(--muted-text);
+}
+
+.chat-messages {
+    padding: 1.25rem 1.75rem 1.5rem;
+    max-height: 320px;
+    overflow-y: auto;
+    background: radial-gradient(circle at top left, #fef2f2 0, #ffffff 55%);
+}
+
+.chat-message {
+    margin-bottom: 1rem;
+}
+
+.chat-message-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9ca3af;
+    margin-bottom: 0.25rem;
+}
+
+.chat-message-bubble {
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    border-radius: 0.9rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.chat-message-assistant .chat-message-bubble {
+    background: #f3f4ff;
+}
+
+.chat-message-user .chat-message-bubble {
+    background: #e0f2fe;
+}
+
+.chat-message-placeholder {
+    font-style: italic;
+    color: #6b7280;
+}
+
+.chat-input-row {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem 1.1rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.chat-input {
+    flex: 1;
+    resize: vertical;
+    min-height: 48px;
+    max-height: 140px;
+    border-radius: 0.85rem;
+    border: 1px solid #d1d5db;
+    padding: 0.65rem 0.85rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: var(--nav-blue);
+    box-shadow: 0 0 0 1px rgba(31, 115, 199, 0.35);
+}
+
+.chat-send-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 0 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: #dc143c;
+    color: #ffffff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease-out, transform 0.15s ease-out,
+                box-shadow 0.15s ease-out;
+}
+
+.chat-send-btn:hover {
+    background: #195c9c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(25, 92, 156, 0.45);
+}
+
+.chat-footer-note {
+    padding: 0 1.75rem 1.25rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* overlay responsive tweaks */
+
+@media (max-width: 640px) {
+    .chat-shell {
+        padding: 1rem;
+    }
+
+    .chat-card {
+        border-radius: 1rem;
+    }
+
+    .chat-header {
+        padding: 1.2rem 1.2rem 0.6rem;
+    }
+
+    .chat-messages {
+        padding: 1rem 1.2rem 1.25rem;
+        max-height: 260px;
+    }
+
+    .chat-input-row {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.8rem 1rem 1rem;
+    }
+
+    .chat-send-btn {
+        align-self: flex-end;
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+    }
+
+    .chat-footer-note {
+        padding: 0 1.2rem 1rem;
+    }
+}
+
+/* ===============================
+   Animations
+   =============================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+
+
+
+/* logo slide-in straight from top */
+@keyframes heroLogoIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+@keyframes cloudDrift {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(220px);
+    }
+}
+
+@keyframes bounceArrow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(6px);
+    }
+}
+
+/* ===============================
+   Reduced motion
+   =============================== */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+    .hero-title,
+    .hero-subtitle,
+    .hero-scroll,
+    .hero-logo,
+    .cs-hero-title,
+    .cs-hero-subtitle,
+    .cs-download-card,
+    .cs-item {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* ===============================
+   Responsive layout tweaks
+   =============================== */
+
+@media (max-width: 900px) {
+    .cs-container {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2.5rem;
+    }
+
+    #steps-1893 {
+        padding: 3.5rem 1.25rem 3rem;
+    }
+
+    .cs-left {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 600px) {
+    #hero {
+        padding-top: 4rem;
+        padding-bottom: 3.5rem;
+        min-height: 105vh;
+    }
+
+    .hero-title {
+        font-size: 2.4rem;
+    }
+
+    .cs-item {
+        padding: 1rem 1.1rem;
+    }
+
+    .cs-title {
+        font-size: 1.7rem;
+    }
+
+    .cs-hero-title {
+        font-size: 2.1rem;
+    }
+
+    .cs-download-card {
+        padding: 1.5rem 1.5rem;
+    }
+}
