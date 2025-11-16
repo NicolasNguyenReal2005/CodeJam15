@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <title>NOBUL</title>
-    <script src="./script.js" defer></script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
 </head>
 <body>
 
@@ -202,96 +202,7 @@
     <!-- ============================================ -->
     <!--        Scroll + Nav + Chat JavaScript       -->
     <!-- ============================================ -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            /* ---- scroll-triggered animations for Home ---- */
-            const observer = new IntersectionObserver((entries, obs) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        obs.unobserve(entry.target); // animate only once
-                    }
-                });
-            }, { threshold: 0.25 });
-
-            document.querySelectorAll('.reveal-up, .reveal-right').forEach((el) => {
-                observer.observe(el);
-            });
-
-            /* ---- fade nav buttons out on scroll ---- */
-            const navLinksContainer = document.querySelector('.nav-links');
-            window.addEventListener('scroll', () => {
-                const y = window.scrollY || window.pageYOffset;
-                if (y > 60) {
-                    navLinksContainer.classList.add('nav-links-faded');
-                } else {
-                    navLinksContainer.classList.remove('nav-links-faded');
-                }
-            });
-
-            /* ---- open / close chat overlay ---- */
-            const overlay = document.getElementById('chat-overlay');
-            const navLinks = document.querySelectorAll('.nav-link[data-target]');
-
-            navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    const target = link.dataset.target;
-                    if (target === 'try') {
-                        e.preventDefault();
-                        overlay.classList.add('chat-overlay-open');
-                    } else if (target === 'home') {
-                        // just close overlay if open; don't scroll anywhere
-                        e.preventDefault();
-                        overlay.classList.remove('chat-overlay-open');
-                    }
-                });
-            });
-
-            overlay.addEventListener('click', (e) => {
-                if (e.target.dataset.close === 'true') {
-                    overlay.classList.remove('chat-overlay-open');
-                }
-            });
-
-            /* ---- chat stub behavior in overlay ---- */
-            const form = document.getElementById('chat-form');
-            const input = document.getElementById('chat-input');
-            const messages = document.getElementById('chat-messages');
-
-            if (form && input && messages) {
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    const text = input.value.trim();
-                    if (!text) return;
-
-                    const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-                    // Add user message
-                    const userMsg = document.createElement('div');
-                    userMsg.className = 'chat-message chat-message-user';
-                    userMsg.innerHTML = `
-                        <div class="chat-message-label">You</div>
-                        <div class="chat-message-bubble">${safeText}</div>
-                    `;
-                    messages.appendChild(userMsg);
-
-                    // Placeholder assistant reply
-                    const reply = document.createElement('div');
-                    reply.className = 'chat-message chat-message-assistant';
-                    reply.innerHTML = `
-                        <div class="chat-message-label">NOBUL</div>
-                        <div class="chat-message-bubble chat-message-placeholder">
-                            When the backend is connected, this is where your analysis will appear.
-                        </div>
-                    `;
-                    messages.appendChild(reply);
-
-                    messages.scrollTop = messages.scrollHeight;
-                    input.value = '';
-                });
-            }
-        });
-    </script>
+    
 
 </body>
 </html>
