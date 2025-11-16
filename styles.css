@@ -141,9 +141,8 @@ body {
 .hero-logo {
     position: absolute;
     /* line up roughly with the top of "Meet Nobull" */
-    top: 0.15rem;
-    /* move it left from the edge so it sits over the hero text area */
-    right: 9rem;
+    top: 0.30rem;
+    right: -5rem;
 
     /* 300% of original size (110px → 330px) */
     width: 660px;
