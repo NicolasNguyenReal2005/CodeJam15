@@ -146,9 +146,9 @@ body {
     right: 9rem;
 
     /* 300% of original size (110px → 330px) */
-    width: 330px;
+    width: 660px;
     max-width: 50vw;
-
+    justify-self: right;
     opacity: 0;
     transform: translateY(-50px) scale(0.96);  /* drop in from above */
     animation: heroLogoIn 0.9s ease-out forwards;
